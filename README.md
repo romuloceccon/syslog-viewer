@@ -44,3 +44,8 @@ Filter events happened between 2013-01-01 0:00:00 and 2013-01-01 2:30:00:
 Filter the last 20 events happened before 2013-02-04 0:00:00:
 
         $ ruby syslog-viewer.rb -c joe:123@example.org -p "20,2013-02-04 0:00:00"
+
+## License
+
+`syslog-viewer` is released under the
+[MIT License](http://www.opensource.org/licenses/MIT).
