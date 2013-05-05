@@ -3,45 +3,45 @@ require 'syslog-viewer'
 
 class ArgsTestCase < Test::Unit::TestCase
 
-  def test_count
+  def test_should_parse_count
     assert_equal({ count: 100 }, Args.parse(['-n', '100']))
   end
 
-  def test_follow
+  def test_should_parse_follow
     assert_equal({ follow: true }, Args.parse(['-f']))
   end
 
-  def test_first_line
+  def test_should_parse_first_line
     assert_equal({ first_line: true }, Args.parse(['-1']))
   end
 
-  def test_tag
+  def test_should_parse_tag
     assert_equal({ tag: 'crond' }, Args.parse(['-t', 'crond']))
   end
 
-  def test_host
+  def test_should_parse_host
     assert_equal({ host: 'db' }, Args.parse(['-o', 'db']))
   end
 
-  def test_severity
+  def test_should_parse_severity
     assert_equal({ severity: 4 }, Args.parse(['-s', 'WARNING']))
   end
 
-  def test_abbreviated_severity
+  def test_should_parse_abbreviated_severity
     assert_equal({ severity: 4 }, Args.parse(['-s', 'WA']))
   end
 
-  def test_lowercase_severity
+  def test_should_parse_lowercase_severity
     assert_equal({ severity: 4 }, Args.parse(['-s', 'warn']))
   end
 
-  def test_invalid_severity
+  def test_should_fail_on_invalid_severity
     assert_raises(OptionParser::InvalidArgument) do
        Args.parse(['-s', 'Z'])
     end
   end
 
-  def test_date_interval
+  def test_should_parse_date_interval
     assert_equal(
         { period: {
             conditions: "DeviceReportedTime >= '2013-05-05 22:20:00' AND " \
@@ -50,7 +50,7 @@ class ArgsTestCase < Test::Unit::TestCase
         Args.parse(['-p', '2013-05-05 22:20:00 +0000,2013-05-05 22:30:00 +0000']))
   end
 
-  def test_date_with_positive_limit
+  def test_should_parse_date_with_positive_count
     assert_equal(
         { period: {
             conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
@@ -58,7 +58,7 @@ class ArgsTestCase < Test::Unit::TestCase
         Args.parse(['-p', '2013-05-05 22:20:00 +0000,10']))
   end
 
-  def test_date_with_negative_limit
+  def test_should_parse_date_with_negative_count
     assert_equal(
         { period: {
             conditions: "DeviceReportedTime <= '2013-05-05 22:20:00'",
@@ -66,7 +66,7 @@ class ArgsTestCase < Test::Unit::TestCase
         Args.parse(['-p', '10,2013-05-05 22:20:00 +0000']))
   end
 
-  def test_date_should_be_converted_to_utc
+  def test_should_convert_date_to_utc
     assert_equal(
         { period: {
             conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
@@ -74,7 +74,7 @@ class ArgsTestCase < Test::Unit::TestCase
         Args.parse(['-p', '2013-05-05 19:20:00 -0300,10']))
   end
 
-  def test_date_without_offset_is_assumed_to_be_localtime
+  def test_should_assume_date_without_offset_to_be_localtime
     t_loc = Time.now
     t_utc = (t_loc + 0).utc
     fmt = '%Y-%m-%d %H:%M:%S'
