@@ -98,8 +98,6 @@ class Args
 
     parser.parse!(@args)
     
-    result[:count] = 10 unless result[:count]
-    result[:database] = { } unless result[:database]
     result
   end
 
@@ -157,7 +155,9 @@ FACILITIES = {
 class Application
 
   def initialize(options)
-    @options = options
+    @options = options.dup
+    @options[:count] = 10 unless @options[:count]
+    @options[:database] = { } unless @options[:database]
 
     @cols = `stty size`.strip.split[1].to_i
 
