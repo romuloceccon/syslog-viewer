@@ -24,7 +24,21 @@ class ArgsTestCase < Test::Unit::TestCase
   end
 
   def test_severity
-    assert_equal({ severity: 'WAR' }, Args.parse(['-s', 'WAR']))
+    assert_equal({ severity: 4 }, Args.parse(['-s', 'WARNING']))
+  end
+
+  def test_abbreviated_severity
+    assert_equal({ severity: 4 }, Args.parse(['-s', 'WA']))
+  end
+
+  def test_lowercase_severity
+    assert_equal({ severity: 4 }, Args.parse(['-s', 'warn']))
+  end
+
+  def test_invalid_severity
+    assert_raises(OptionParser::InvalidArgument) do
+       Args.parse(['-s', 'Z'])
+    end
   end
 
 end

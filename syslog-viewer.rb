@@ -59,10 +59,15 @@ class Args
       opts.on('-t', '--tag TAG', 'Filter messages with tag TAG') do |v|
         result[:tag] = v
       end
-      opts.on('-s', '--severity SEV', ['DEB', 'INF', 'NOT', 'WAR', 'ERR', 'CRI',
-          'ALE', 'EME'], 'Filter messages with severity SEV or greater ' \
-          '(DEB, INF, NOT, WAR, ERR, CRI, ALE, EME)') do |v|
-        result[:severity] = v
+      opts.on('-s', '--severity SEV',
+          'Filter messages with severity SEV or greater (DEBUG,',
+          'INFORMATIONAL, NOTICE, WARNING, ERROR, CRITICAL,',
+          'ALERT, EMERGENCY). Option can be abbreviated to any',
+          'substring matching the start of the option (for',
+          'example: `W\' for WARNING)') do |v|
+        sev = SEV_OPTIONS.select { |key, value| key.start_with?(v.upcase) }
+        raise OptionParser::InvalidArgument unless sev.count == 1
+        result[:severity] = sev.values[0]
       end
       opts.on('-p', '--period PERIOD', 'Filter by period PERIOD') do |v|
         raise StandardError, "--period not allowed with --count" if result[:count]
@@ -115,14 +120,14 @@ SEVERITIES = {
 }
 
 SEV_OPTIONS = {
-  'EME' => 0,
-  'ALE' => 1,
-  'CRI' => 2,
-  'ERR' => 3,
-  'WAR' => 4,
-  'NOT' => 5,
-  'INF' => 6,
-  'DEB' => 7
+  'EMERGENCY'     => 0,
+  'ALERT'         => 1,
+  'CRITICAL'      => 2,
+  'ERROR'         => 3,
+  'WARNING'       => 4,
+  'NOTICE'        => 5,
+  'INFORMATIONAL' => 6,
+  'DEBUG'         => 7
 }
 
 FACILITIES = {
@@ -176,7 +181,7 @@ class Application
       @conditions << "syslogtag like '#{sanitize_str(t)}%'"
     end
     if sev = @options[:severity]
-      @conditions << "priority <= #{SEV_OPTIONS[sev]}"
+      @conditions << "priority <= #{sev}"
     end
   end
 
