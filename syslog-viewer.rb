@@ -20,75 +20,84 @@ def fmt_date(d)
   d.strftime('%Y-%m-%d %H:%M:%S')
 end
 
-$options = { }
+class Args
 
-parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{$0} [options]"
+  def self.parse(args)
+    result = { }
 
-  opts.on('-c', '--connect CONNSTRING', 'Connect to MySQL with username:password@' \
-      'hostname[:port]') do |v|
-    unless m = v.match(/^(.*):(.*)@([\w.]*)(:(\d+))?$/)
-      raise OptionParser::InvalidArgument, v
+    parser = OptionParser.new do |opts|
+      opts.banner = "Usage: #{$0} [options]"
+
+      opts.on('-c', '--connect CONNSTRING', 'Connect to MySQL with username:password@' \
+          'hostname[:port]') do |v|
+        unless m = v.match(/^(.*):(.*)@([\w.]*)(:(\d+))?$/)
+          raise OptionParser::InvalidArgument, v
+        end
+        result[:database] = { :host => m[3], :username => m[1],
+            :password => m[2], :port => m[5].to_i }
+      end
+      opts.on('-1', '--first-line', 'Outputs first line of every message') do |v|
+        result[:first_line] = true
+      end
+      opts.on('-n', '--count COUNT', 'Displays last COUNT events (default: 10)') do |v|
+        result[:count] = v.to_i
+      end
+      opts.on('-f', '--follow', 'Polls database periodically for new events') do |v|
+        result[:follow] = true
+      end
+      opts.on('-o', '--host HOST', 'Filter messages from host HOST') do |v|
+        result[:host] = v
+      end
+      opts.on('-t', '--tag TAG', 'Filter messages with tag TAG') do |v|
+        result[:tag] = v
+      end
+      opts.on('-s', '--severity SEV', ['DEB', 'INF', 'NOT', 'WAR', 'ERR', 'CRI',
+          'ALE', 'EME'], 'Filter messages with severity SEV or greater ' \
+          '(DEB, INF, NOT, WAR, ERR, CRI, ALE, EME)') do |v|
+        result[:severity] = v
+      end
+      opts.on('-p', '--period PERIOD', 'Filter by period PERIOD') do |v|
+        raise StandardError, "--period not allowed with --count" if result[:count]
+        raise StandardError, "--period not allowed with --follow" if result[:follow]
+          
+        p = v.split(',')
+        p1 = p2 = nil
+        if p.count > 2
+          raise OptionParser::InvalidArgument, v
+        end
+        p1 = parse_date_or_count(p[0]) if p[0]
+        p2 = parse_date_or_count(p[1]) if p[1]
+        if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 < p2
+          result[:period] = { conditions:
+              "DeviceReportedTime >= '#{fmt_date(p1)}' and DeviceReportedTime <= '#{fmt_date(p2)}'",
+              order: 'DeviceReportedTime', reversed: false }
+        elsif p1.respond_to?(:strftime) && Numeric === p2
+          result[:period] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
+              limit: p2, order: 'DeviceReportedTime', reversed: false }
+        elsif Numeric === p1 && p2.respond_to?(:strftime)
+          result[:period] = { conditions: "DeviceReportedTime <= '#{fmt_date(p2)}'",
+              limit: p1, order: 'DeviceReportedTime desc', reversed: true }
+        else
+          raise OptionParser::InvalidArgument, v
+        end
+      end
+
+      opts.on('-h', '--help', 'Displays this help') do
+        puts opts
+        exit(0)
+      end
     end
-    $options[:database] = { :host => m[3], :username => m[1],
-        :password => m[2], :port => m[5].to_i }
-  end
-  opts.on('-1', '--first-line', 'Outputs first line of every message') do |v|
-    $options[:first_line] = true
-  end
-  opts.on('-n', '--count COUNT', 'Displays last COUNT events (default: 10)') do |v|
-    $options[:count] = v.to_i
-  end
-  opts.on('-f', '--follow', 'Polls database periodically for new events') do |v|
-    $options[:follow] = true
-  end
-  opts.on('-o', '--host HOST', 'Filter messages from host HOST') do |v|
-    $options[:host] = v
-  end
-  opts.on('-t', '--tag TAG', 'Filter messages with tag TAG') do |v|
-    $options[:tag] = v
-  end
-  opts.on('-s', '--severity SEV', ['DEB', 'INF', 'NOT', 'WAR', 'ERR', 'CRI',
-      'ALE', 'EME'], 'Filter messages with severity SEV or greater ' \
-      '(DEB, INF, NOT, WAR, ERR, CRI, ALE, EME)') do |v|
-    $options[:severity] = v
-  end
-  opts.on('-p', '--period PERIOD', 'Filter by period PERIOD') do |v|
-    raise StandardError, "--period not allowed with --count" if $options[:count]
-    raise StandardError, "--period not allowed with --follow" if $options[:follow]
-      
-    p = v.split(',')
-    p1 = p2 = nil
-    if p.count > 2
-      raise OptionParser::InvalidArgument, v
-    end
-    p1 = parse_date_or_count(p[0]) if p[0]
-    p2 = parse_date_or_count(p[1]) if p[1]
-    if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 < p2
-      $options[:period] = { conditions:
-          "DeviceReportedTime >= '#{fmt_date(p1)}' and DeviceReportedTime <= '#{fmt_date(p2)}'",
-          order: 'DeviceReportedTime', reversed: false }
-    elsif p1.respond_to?(:strftime) && Numeric === p2
-      $options[:period] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
-          limit: p2, order: 'DeviceReportedTime', reversed: false }
-    elsif Numeric === p1 && p2.respond_to?(:strftime)
-      $options[:period] = { conditions: "DeviceReportedTime <= '#{fmt_date(p2)}'",
-          limit: p1, order: 'DeviceReportedTime desc', reversed: true }
-    else
-      raise OptionParser::InvalidArgument, v
-    end
+
+    parser.parse!
+    
+    result[:count] = 10 unless result[:count]
+    result[:database] = { } unless result[:database]
+    result
   end
 
-  opts.on('-h', '--help', 'Displays this help') do
-    puts opts
-    exit(0)
-  end
 end
 
-parser.parse!
-
-$options[:count] = 10 unless $options[:count]
-$options[:database] = { } unless $options[:database]
+$options = Args.parse(ARGV)
 
 SEVERITIES = {
   0 => "\e[1;31mEME\e[0m",
