@@ -44,26 +44,45 @@ class ArgsTestCase < Test::Unit::TestCase
   def test_date_interval
     assert_equal(
         { period: {
-            conditions: "DeviceReportedTime >= '2013-05-05 19:20:00' AND " \
-                        "DeviceReportedTime <= '2013-05-05 19:30:00'",
+            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00' AND " \
+                        "DeviceReportedTime <= '2013-05-05 22:30:00'",
             order: "DeviceReportedTime", reversed: false } },
-        Args.parse(['-p', '2013-05-05 19:20:00 +0000,2013-05-05 19:30:00 +0000']))
+        Args.parse(['-p', '2013-05-05 22:20:00 +0000,2013-05-05 22:30:00 +0000']))
   end
 
   def test_date_with_positive_limit
     assert_equal(
         { period: {
-            conditions: "DeviceReportedTime >= '2013-05-05 19:20:00'",
+            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
             limit: 10, order: "DeviceReportedTime", reversed: false } },
-        Args.parse(['-p', '2013-05-05 19:20:00 +0000,10']))
+        Args.parse(['-p', '2013-05-05 22:20:00 +0000,10']))
   end
 
   def test_date_with_negative_limit
     assert_equal(
         { period: {
-            conditions: "DeviceReportedTime <= '2013-05-05 19:20:00'",
+            conditions: "DeviceReportedTime <= '2013-05-05 22:20:00'",
             limit: 10, order: "DeviceReportedTime DESC", reversed: true } },
-        Args.parse(['-p', '10,2013-05-05 19:20:00 +0000']))
+        Args.parse(['-p', '10,2013-05-05 22:20:00 +0000']))
+  end
+
+  def test_date_should_be_converted_to_utc
+    assert_equal(
+        { period: {
+            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
+            limit: 10, order: "DeviceReportedTime", reversed: false } },
+        Args.parse(['-p', '2013-05-05 19:20:00 -0300,10']))
+  end
+
+  def test_date_without_offset_is_assumed_to_be_localtime
+    t_loc = Time.now
+    t_utc = (t_loc + 0).utc
+    fmt = '%Y-%m-%d %H:%M:%S'
+    assert_equal(
+        { period: {
+            conditions: "DeviceReportedTime >= '%s'" % t_utc.strftime(fmt),
+            limit: 10, order: "DeviceReportedTime", reversed: false } },
+        Args.parse(['-p', '%s,10' % t_loc.strftime(fmt)]))
   end
 
 end
