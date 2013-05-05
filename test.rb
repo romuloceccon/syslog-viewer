@@ -15,4 +15,16 @@ class ArgsTestCase < Test::Unit::TestCase
     assert_equal({ first_line: true }, Args.parse(['-1']))
   end
 
+  def test_tag
+    assert_equal({ tag: 'crond' }, Args.parse(['-t', 'crond']))
+  end
+
+  def test_host
+    assert_equal({ host: 'db' }, Args.parse(['-o', 'db']))
+  end
+
+  def test_severity
+    assert_equal({ severity: 'WAR' }, Args.parse(['-s', 'WAR']))
+  end
+
 end
