@@ -2,27 +2,35 @@ require 'mysql2'
 require 'date'
 require 'optparse'
 
-$offset = DateTime.now.offset
-
-def parse_date_or_count(x)
-  begin
-    Integer(x)
-  rescue ArgumentError
-    begin
-      DateTime.parse(x) - $offset
-    rescue ArgumentError
-      nil
-    end
-  end
-end
-
-def fmt_date(d)
-  d.strftime('%Y-%m-%d %H:%M:%S')
-end
-
 class Args
 
+  def initialize(args)
+    @offset = DateTime.now.offset
+    @args = args
+  end
+
   def self.parse(args)
+    parser = self.new(args)
+    parser.internal_parse
+  end
+
+  def parse_date_or_count(x)
+    begin
+      Integer(x)
+    rescue ArgumentError
+      begin
+        DateTime.parse(x) - @offset
+      rescue ArgumentError
+        nil
+      end
+    end
+  end
+
+  def fmt_date(d)
+    d.strftime('%Y-%m-%d %H:%M:%S')
+  end
+
+  def internal_parse
     result = { }
 
     parser = OptionParser.new do |opts|
@@ -88,7 +96,7 @@ class Args
       end
     end
 
-    parser.parse!
+    parser.parse!(@args)
     
     result[:count] = 10 unless result[:count]
     result[:database] = { } unless result[:database]
