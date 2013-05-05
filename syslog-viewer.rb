@@ -18,8 +18,7 @@ class Args
     if x.match(/^\d+$/)
       x.to_i
     else
-      t = Time.parse(x)
-      t.utc
+      Time.parse(x).utc
     end
   end
 
