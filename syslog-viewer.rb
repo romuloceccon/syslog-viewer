@@ -35,9 +35,10 @@ class Args
 
     parser = OptionParser.new do |opts|
       opts.banner = "Usage: #{$0} [options]"
+      opts.summary_width = 22
 
-      opts.on('-c', '--connect CONNSTRING', 'Connect to MySQL with username:password@' \
-          'hostname[:port]') do |v|
+      opts.on('-c', '--connect CONN', 'Connect to MySQL with',
+          'username:password@hostname[:port]') do |v|
         unless m = v.match(/^(.*):(.*)@([\w.]*)(:(\d+))?$/)
           raise OptionParser::InvalidArgument, v
         end
