@@ -281,5 +281,7 @@ class Application
 
 end
 
-app = Application.new(Args.parse(ARGV))
-app.run
+if __FILE__ == $0
+  app = Application.new(Args.parse(ARGV))
+  app.run
+end
