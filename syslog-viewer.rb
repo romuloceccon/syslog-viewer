@@ -105,8 +105,6 @@ class Args
 
 end
 
-$options = Args.parse(ARGV)
-
 SEVERITIES = {
   0 => "\e[1;31mEME\e[0m",
   1 => "\e[1;35mALE\e[0m",
@@ -156,119 +154,132 @@ FACILITIES = {
   23 => 'LOCAL7'
 }
 
-$cols = `stty size`.strip.split[1].to_i
+class Application
 
-$client = Mysql2::Client.new({ database: 'Syslog', database_timezone: :utc,
-    application_timezone: :local }.merge($options[:database]))
+  def initialize(options)
+    @options = options
 
-$message_width = [$cols - 'dd/mm HH:MM:SS hhhhhh ttttttttttttttt FACILI SEV '.size, 30].max
-$max_id = 0
+    @cols = `stty size`.strip.split[1].to_i
 
-def sanitize_str(s)
-  s.gsub!("'", "''")
-  s.gsub!("%", "%%")
-  s
-end
+    @client = Mysql2::Client.new({ database: 'Syslog', database_timezone: :utc,
+        application_timezone: :local }.merge(@options[:database]))
 
-$conditions = []
+    @message_width = [@cols - 'dd/mm HH:MM:SS hhhhhh ttttttttttttttt FACILI SEV '.size, 30].max
+    @max_id = 0
 
-if h = $options[:host]
-  $conditions << "fromhost like '#{sanitize_str(h)}%'"
-end
-if t = $options[:tag]
-  $conditions << "syslogtag like '#{sanitize_str(t)}%'"
-end
-if sev = $options[:severity]
-  $conditions << "priority <= #{SEV_OPTIONS[sev]}"
-end
+    @conditions = []
 
-def exec_query(options = {})
-  where = ""
-  limit = ""
-  order = "order by id desc"
-  if w = options[:where]
-    if w.respond_to?(:join)
-      unless w.empty?
-        where = "where #{w.join(' and ')}"
+    if h = @options[:host]
+      @conditions << "fromhost like '#{sanitize_str(h)}%'"
+    end
+    if t = @options[:tag]
+      @conditions << "syslogtag like '#{sanitize_str(t)}%'"
+    end
+    if sev = @options[:severity]
+      @conditions << "priority <= #{SEV_OPTIONS[sev]}"
+    end
+  end
+
+  def run
+    if period = @options[:period]
+      output_results(exec_query({ limit: period[:limit],
+          where: @conditions + [period[:conditions]], order: period[:order] }),
+          period[:reversed])
+      exit(0)
+    end
+
+    output_results(exec_query({ limit: @options[:count], where: @conditions }))
+
+    if @options[:follow]
+      while true do
+        sleep(2.0)
+        output_results(exec_query({ where: @conditions + ["id > #{@max_id}"] }))
       end
-    else
-      where = w
     end
   end
-  if options[:limit]
-    limit = "limit #{options[:limit]}"
-  end
-  if options[:order]
-    order = "order by #{options[:order]}"
-  end
-  $client.query(<<-EOS)
-    select id, DeviceReportedTime, facility, priority, fromhost, syslogtag, message
-    from SystemEvents #{where} #{order} #{limit}
-  EOS
-end
 
-def output_message(message, width_of_first_line)
-  lines = message.split("\n")
-
-  if lines.empty?
-    puts ""
-    return
+  def sanitize_str(s)
+    s.gsub!("'", "''")
+    s.gsub!("%", "%%")
+    s
   end
 
-  puts lines.first.slice!(0, width_of_first_line)
-  return if $options[:first_line]
-
-  while !lines.empty? do
-    while (s = lines.first.slice!(0, $message_width)) != '' do
-      print ' ' * ($cols - $message_width)
-      puts s
+  def exec_query(options = {})
+    where = ""
+    limit = ""
+    order = "order by id desc"
+    if w = options[:where]
+      if w.respond_to?(:join)
+        unless w.empty?
+          where = "where #{w.join(' and ')}"
+        end
+      else
+        where = w
+      end
     end
-    lines.shift
-  end
-end
-
-def output_results(arr, reversed = true)
-  each_method = reversed ? :reverse_each : :each
-  arr.send(each_method) do |row|
-    $max_id = row['id']
-    dt = row['DeviceReportedTime'].strftime('%d/%m %H:%M:%S')
-    facility = FACILITIES[row['facility']] || '      '
-    priority = SEVERITIES[row['priority']] || '   '
-    host = "%-6s" % row['fromhost'].to_s[0..5]
-    if m = row['syslogtag'].match(/^(.*)\[/)
-      tag = "%-15s" % m[1].to_s[0..14]
-    else
-      tag = "%-15s" % row['syslogtag'].to_s[0..14]
+    if options[:limit]
+      limit = "limit #{options[:limit]}"
     end
-    remaining_len = $cols
-    print dt;  remaining_len -= dt.size
-    print ' '; remaining_len -= 1
-    print host; remaining_len -= host.size
-    print ' '; remaining_len -= 1
-    print tag;  remaining_len -= tag.size
-    print ' '; remaining_len -= 1
-    print facility; remaining_len -= facility.size
-    print ' '; remaining_len -= 1
-    print priority; remaining_len -= 3
-    print ' '; remaining_len -= 1
-    msg = row['message'].gsub(/#\d{3}/) { |x| Integer(x[1..3]).chr }
-    msg.slice!(0, 1) if msg[0] == ' '
-    output_message(msg, remaining_len)
+    if options[:order]
+      order = "order by #{options[:order]}"
+    end
+    @client.query(<<-EOS)
+      select id, DeviceReportedTime, facility, priority, fromhost, syslogtag, message
+      from SystemEvents #{where} #{order} #{limit}
+    EOS
   end
-end
 
-if period = $options[:period]
-  output_results(exec_query({ limit: period[:limit],
-      where: $conditions + [period[:conditions]], order: period[:order] }),
-      period[:reversed])
-  exit(0)
-end
+  def output_message(message, width_of_first_line)
+    lines = message.split("\n")
 
-output_results(exec_query({ limit: $options[:count], where: $conditions }))
+    if lines.empty?
+      puts ""
+      return
+    end
 
-if $options[:follow]
-  while true do
-    sleep(2.0)
-    output_results(exec_query({ where: $conditions + ["id > #{$max_id}"] }))
+    puts lines.first.slice!(0, width_of_first_line)
+    return if @options[:first_line]
+
+    while !lines.empty? do
+      while (s = lines.first.slice!(0, @message_width)) != '' do
+        print ' ' * (@cols - @message_width)
+        puts s
+      end
+      lines.shift
+    end
   end
+
+  def output_results(arr, reversed = true)
+    each_method = reversed ? :reverse_each : :each
+    arr.send(each_method) do |row|
+      @max_id = row['id']
+      dt = row['DeviceReportedTime'].strftime('%d/%m %H:%M:%S')
+      facility = FACILITIES[row['facility']] || '      '
+      priority = SEVERITIES[row['priority']] || '   '
+      host = "%-6s" % row['fromhost'].to_s[0..5]
+      if m = row['syslogtag'].match(/^(.*)\[/)
+        tag = "%-15s" % m[1].to_s[0..14]
+      else
+        tag = "%-15s" % row['syslogtag'].to_s[0..14]
+      end
+      remaining_len = @cols
+      print dt;  remaining_len -= dt.size
+      print ' '; remaining_len -= 1
+      print host; remaining_len -= host.size
+      print ' '; remaining_len -= 1
+      print tag;  remaining_len -= tag.size
+      print ' '; remaining_len -= 1
+      print facility; remaining_len -= facility.size
+      print ' '; remaining_len -= 1
+      print priority; remaining_len -= 3
+      print ' '; remaining_len -= 1
+      msg = row['message'].gsub(/#\d{3}/) { |x| Integer(x[1..3]).chr }
+      msg.slice!(0, 1) if msg[0] == ' '
+      output_message(msg, remaining_len)
+    end
+  end
+
 end
+
+app = Application.new(Args.parse(ARGV))
+app.run
