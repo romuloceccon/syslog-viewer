@@ -1,5 +1,5 @@
 require 'mysql2'
-require 'date'
+require 'time'
 require 'optparse'
 
 class Args
@@ -15,14 +15,11 @@ class Args
   end
 
   def parse_date_or_count(x)
-    begin
-      Integer(x)
-    rescue ArgumentError
-      begin
-        DateTime.parse(x) - @offset
-      rescue ArgumentError
-        nil
-      end
+    if x.match(/^\d+$/)
+      x.to_i
+    else
+      t = Time.parse(x)
+      t.utc
     end
   end
 
@@ -83,14 +80,14 @@ class Args
         p2 = parse_date_or_count(p[1]) if p[1]
         if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 < p2
           result[:period] = { conditions:
-              "DeviceReportedTime >= '#{fmt_date(p1)}' and DeviceReportedTime <= '#{fmt_date(p2)}'",
+              "DeviceReportedTime >= '#{fmt_date(p1)}' AND DeviceReportedTime <= '#{fmt_date(p2)}'",
               order: 'DeviceReportedTime', reversed: false }
         elsif p1.respond_to?(:strftime) && Numeric === p2
           result[:period] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
               limit: p2, order: 'DeviceReportedTime', reversed: false }
         elsif Numeric === p1 && p2.respond_to?(:strftime)
           result[:period] = { conditions: "DeviceReportedTime <= '#{fmt_date(p2)}'",
-              limit: p1, order: 'DeviceReportedTime desc', reversed: true }
+              limit: p1, order: 'DeviceReportedTime DESC', reversed: true }
         else
           raise OptionParser::InvalidArgument, v
         end

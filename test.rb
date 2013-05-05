@@ -41,4 +41,29 @@ class ArgsTestCase < Test::Unit::TestCase
     end
   end
 
+  def test_date_interval
+    assert_equal(
+        { period: {
+            conditions: "DeviceReportedTime >= '2013-05-05 19:20:00' AND " \
+                        "DeviceReportedTime <= '2013-05-05 19:30:00'",
+            order: "DeviceReportedTime", reversed: false } },
+        Args.parse(['-p', '2013-05-05 19:20:00 +0000,2013-05-05 19:30:00 +0000']))
+  end
+
+  def test_date_with_positive_limit
+    assert_equal(
+        { period: {
+            conditions: "DeviceReportedTime >= '2013-05-05 19:20:00'",
+            limit: 10, order: "DeviceReportedTime", reversed: false } },
+        Args.parse(['-p', '2013-05-05 19:20:00 +0000,10']))
+  end
+
+  def test_date_with_negative_limit
+    assert_equal(
+        { period: {
+            conditions: "DeviceReportedTime <= '2013-05-05 19:20:00'",
+            limit: 10, order: "DeviceReportedTime DESC", reversed: true } },
+        Args.parse(['-p', '10,2013-05-05 19:20:00 +0000']))
+  end
+
 end
