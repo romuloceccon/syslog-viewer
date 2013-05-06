@@ -77,9 +77,6 @@ class Args
           'or -c. Examples:',
           '  2013-05-05 20:50:00,2013-05-05 21:00:00',
           '  2013-05-06 01:00:00 +0000,-10') do |v|
-        raise StandardError, "--period not allowed with --count" if result[:count]
-        raise StandardError, "--period not allowed with --follow" if result[:follow]
-          
         p = v.split(',')
         p1 = p2 = nil
         if p.count > 2
@@ -111,7 +108,16 @@ class Args
     end
 
     parser.parse!(@args)
-    
+
+    if result[:period] && result[:follow]
+      raise OptionParser::InvalidOption,
+          '--period not allowed in conjunction with --follow'
+    end
+    if result[:period] && result[:count]
+      raise OptionParser::InvalidOption,
+          '--period not allowed in conjunction with --count'
+    end
+
     result
   end
 

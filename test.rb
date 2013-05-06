@@ -85,4 +85,16 @@ class ArgsTestCase < Test::Unit::TestCase
         Args.parse(['-p', '%s,10' % t_loc.strftime(fmt)]))
   end
 
+  def test_should_not_allow_conjunction_of_follow_and_period
+    assert_raises(OptionParser::InvalidOption) do
+      Args.parse(['-p', '2013-05-05 19:20:00,10', '-f'])
+    end
+  end
+
+  def test_should_not_allow_conjunction_of_count_and_period
+    assert_raises(OptionParser::InvalidOption) do
+      Args.parse(['-p', '2013-05-05 19:20:00,10', '-n', '1'])
+    end
+  end
+
 end
