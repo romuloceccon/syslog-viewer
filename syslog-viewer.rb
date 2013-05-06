@@ -74,7 +74,7 @@ class Args
           'after the date otherwise. `DeviceReportedTime\' column',
           'will be used for filtering and ordering; default is',
           'to use `Id\'. Cannot be used in conjunction with -f',
-          'or -c. Examples:',
+          'or -n. Examples:',
           '  2013-05-05 20:50:00,2013-05-05 21:00:00',
           '  2013-05-06 01:00:00 +0000,-10') do |v|
         p = v.split(',')
