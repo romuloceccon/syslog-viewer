@@ -15,7 +15,7 @@ class Args
   end
 
   def parse_date_or_count(x)
-    if x.match(/^\d+$/)
+    if x.match(/^[+-]?\d+$/)
       x.to_i
     else
       Time.parse(x).utc
@@ -77,16 +77,18 @@ class Args
         end
         p1 = parse_date_or_count(p[0]) if p[0]
         p2 = parse_date_or_count(p[1]) if p[1]
-        if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 < p2
+        if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 <= p2
           result[:period] = { conditions:
               "DeviceReportedTime >= '#{fmt_date(p1)}' AND DeviceReportedTime <= '#{fmt_date(p2)}'",
               order: 'DeviceReportedTime', reversed: false }
         elsif p1.respond_to?(:strftime) && Numeric === p2
-          result[:period] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
-              limit: p2, order: 'DeviceReportedTime', reversed: false }
-        elsif Numeric === p1 && p2.respond_to?(:strftime)
-          result[:period] = { conditions: "DeviceReportedTime <= '#{fmt_date(p2)}'",
-              limit: p1, order: 'DeviceReportedTime DESC', reversed: true }
+          if p2 >= 0
+            result[:period] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
+                limit: p2, order: 'DeviceReportedTime', reversed: false }
+          else
+            result[:period] = { conditions: "DeviceReportedTime <= '#{fmt_date(p1)}'",
+                limit: -p2, order: 'DeviceReportedTime DESC', reversed: true }
+          end
         else
           raise OptionParser::InvalidArgument, v
         end

@@ -63,7 +63,7 @@ class ArgsTestCase < Test::Unit::TestCase
         { period: {
             conditions: "DeviceReportedTime <= '2013-05-05 22:20:00'",
             limit: 10, order: "DeviceReportedTime DESC", reversed: true } },
-        Args.parse(['-p', '10,2013-05-05 22:20:00 +0000']))
+        Args.parse(['-p', '2013-05-05 22:20:00 +0000,-10']))
   end
 
   def test_should_convert_date_to_utc
