@@ -66,7 +66,17 @@ class Args
         raise OptionParser::InvalidArgument unless sev.count == 1
         result[:severity] = sev.values[0]
       end
-      opts.on('-p', '--period PERIOD', 'Filter by period PERIOD') do |v|
+      opts.on('-p', '--period PERIOD',
+          'Filter by period PERIOD. PERIOD can be specified as',
+          'as two dates parseable by Ruby\'s Time.parse; or a',
+          'date and a number `x\': `x\' events before the date are',
+          'listed if the number is negative, and `x\' events',
+          'after the date otherwise. `DeviceReportedTime\' column',
+          'will be used for filtering and ordering; default is',
+          'to use `Id\'. Cannot be used in conjunction with -f',
+          'or -c. Examples:',
+          '  2013-05-05 20:50:00,2013-05-05 21:00:00',
+          '  2013-05-06 01:00:00 +0000,-10') do |v|
         raise StandardError, "--period not allowed with --count" if result[:count]
         raise StandardError, "--period not allowed with --follow" if result[:follow]
           
