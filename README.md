@@ -45,6 +45,10 @@ Filter the last 20 events happened before 2013-02-04 0:00:00:
 
         $ ruby syslog-viewer.rb -c joe:123@example.org -p "20,2013-02-04 0:00:00"
 
+## Additional help
+
+Check the [Wiki](https://github.com/romuloceccon/syslog-viewer/wiki).
+
 ## License
 
 `syslog-viewer` is released under the
