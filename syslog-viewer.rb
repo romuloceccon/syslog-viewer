@@ -293,7 +293,7 @@ class Application
       print ' '; remaining_len -= 1
       print priority; remaining_len -= 3
       print ' '; remaining_len -= 1
-      msg = row['message'].gsub(/#\d{3}/) { |x| Integer(x[1..3]).chr }
+      msg = row['message']
       msg.slice!(0, 1) if msg[0] == ' '
       output_message(msg, remaining_len)
     end
