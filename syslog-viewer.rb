@@ -40,23 +40,23 @@ class Args
         unless m = v.match(/^(.*):(.*)@([\w.]*)(:(\d+))?$/)
           raise OptionParser::InvalidArgument, v
         end
-        result[:database] = { :host => m[3], :username => m[1],
+        result['database'] = { :host => m[3], :username => m[1],
             :password => m[2], :port => m[5].to_i }
       end
       opts.on('-1', '--first-line', 'Outputs first line of every message') do |v|
-        result[:first_line] = true
+        result['first_line'] = true
       end
       opts.on('-n', '--count COUNT', 'Displays last COUNT events (default: 10)') do |v|
-        result[:count] = v.to_i
+        result['count'] = v.to_i
       end
       opts.on('-f', '--follow', 'Polls database periodically for new events') do |v|
-        result[:follow] = true
+        result['follow'] = true
       end
       opts.on('-o', '--host HOST', 'Filter messages from host HOST') do |v|
-        result[:host] = v
+        result['host'] = v
       end
       opts.on('-t', '--tag TAG', 'Filter messages with tag TAG') do |v|
-        result[:tag] = v
+        result['tag'] = v
       end
       opts.on('-s', '--severity SEV',
           'Filter messages with severity SEV or greater (DEBUG,',
@@ -66,7 +66,7 @@ class Args
           'example: `W\' for WARNING)') do |v|
         sev = SEV_OPTIONS.select { |key, value| key.start_with?(v.upcase) }
         raise OptionParser::InvalidArgument unless sev.count == 1
-        result[:severity] = sev.values[0]
+        result['severity'] = sev.values[0]
       end
       opts.on('-p', '--period PERIOD',
           'Filter by period PERIOD. PERIOD can be specified as',
@@ -87,15 +87,15 @@ class Args
         p1 = parse_date_or_count(p[0]) if p[0]
         p2 = parse_date_or_count(p[1]) if p[1]
         if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 <= p2
-          result[:period] = { conditions:
+          result['period'] = { conditions:
               "DeviceReportedTime >= '#{fmt_date(p1)}' AND DeviceReportedTime <= '#{fmt_date(p2)}'",
               order: 'DeviceReportedTime', reversed: false }
         elsif p1.respond_to?(:strftime) && Numeric === p2
           if p2 >= 0
-            result[:period] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
+            result['period'] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
                 limit: p2, order: 'DeviceReportedTime', reversed: false }
           else
-            result[:period] = { conditions: "DeviceReportedTime <= '#{fmt_date(p1)}'",
+            result['period'] = { conditions: "DeviceReportedTime <= '#{fmt_date(p1)}'",
                 limit: -p2, order: 'DeviceReportedTime DESC', reversed: true }
           end
         else
@@ -118,11 +118,11 @@ class Args
       result = @conf[conf_entry].merge(result)
     end
 
-    if result[:period] && result[:follow]
+    if result['period'] && result['follow']
       raise OptionParser::InvalidOption,
           '--period not allowed in conjunction with --follow'
     end
-    if result[:period] && result[:count]
+    if result['period'] && result['count']
       raise OptionParser::InvalidOption,
           '--period not allowed in conjunction with --count'
     end
@@ -185,41 +185,41 @@ class Application
 
   def initialize(options)
     @options = options.dup
-    @options[:count] = 10 unless @options[:count]
-    @options[:database] = { } unless @options[:database]
+    @options['count'] = 10 unless @options['count']
+    @options['database'] = { } unless @options['database']
 
     @cols = `stty size`.strip.split[1].to_i
 
     @client = Mysql2::Client.new({ database: 'Syslog', database_timezone: :utc,
-        application_timezone: :local }.merge(@options[:database]))
+        application_timezone: :local }.merge(@options['database']))
 
     @message_width = [@cols - 'dd/mm HH:MM:SS hhhhhh ttttttttttttttt FACILI SEV '.size, 30].max
     @max_id = 0
 
     @conditions = []
 
-    if h = @options[:host]
+    if h = @options['host']
       @conditions << "fromhost like '#{sanitize_str(h)}%'"
     end
-    if t = @options[:tag]
+    if t = @options['tag']
       @conditions << "syslogtag like '#{sanitize_str(t)}%'"
     end
-    if sev = @options[:severity]
+    if sev = @options['severity']
       @conditions << "priority <= #{sev}"
     end
   end
 
   def run
-    if period = @options[:period]
+    if period = @options['period']
       output_results(exec_query({ limit: period[:limit],
           where: @conditions + [period[:conditions]], order: period[:order] }),
           period[:reversed])
       exit(0)
     end
 
-    output_results(exec_query({ limit: @options[:count], where: @conditions }))
+    output_results(exec_query({ limit: @options['count'], where: @conditions }))
 
-    if @options[:follow]
+    if @options['follow']
       while true do
         sleep(2.0)
         output_results(exec_query({ where: @conditions + ["id > #{@max_id}"] }))
@@ -267,7 +267,7 @@ class Application
     end
 
     puts lines.first.slice!(0, width_of_first_line)
-    return if @options[:first_line]
+    return if @options['first_line']
 
     while !lines.empty? do
       while (s = lines.first.slice!(0, @message_width)) != '' do
