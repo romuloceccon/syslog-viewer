@@ -45,6 +45,26 @@ Filter the last 20 events happened before 2013-02-04 0:00:00:
 
         $ ruby syslog-viewer.rb -c joe:123@example.org -p "20,2013-02-04 0:00:00"
 
+It's possible to store common options in `~/.syslog-viewer`: it's a YAML file. The
+syntax is exactly the same as in the command line, except for the `connect` option,
+whose name changes to `database`:
+
+        example:
+          database:
+            host: example.org
+            port: 3306
+            username: joe
+            password: '123'
+          count: 100
+          severity: WARNING
+
+You can then invoke those options by the corresponding label (each label can have
+its own group of options):
+
+        $ ruby syslog-viewer.rb -f example
+
+Note: if you specifiy a label in the command line it must be the last option!
+
 ## Additional help
 
 Check the [Wiki](https://github.com/romuloceccon/syslog-viewer/wiki).
