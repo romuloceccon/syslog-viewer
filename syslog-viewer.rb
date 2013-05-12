@@ -1,16 +1,18 @@
 require 'mysql2'
 require 'time'
 require 'optparse'
+require 'yaml'
 
 class Args
 
-  def initialize(args)
+  def initialize(args, conf)
     @offset = DateTime.now.offset
+    @conf = conf && YAML.load(conf) || {}
     @args = args
   end
 
-  def self.parse(args)
-    parser = self.new(args)
+  def self.parse(args, conf = nil)
+    parser = self.new(args, conf)
     parser.internal_parse
   end
 
@@ -107,7 +109,14 @@ class Args
       end
     end
 
-    parser.parse!(@args)
+    parser.order!(@args)
+    
+    if conf_entry = @args.first
+      unless conf_data = @conf[conf_entry]
+        raise OptionParser::InvalidArgument, conf_entry
+      end 
+      result = @conf[conf_entry].merge(result)
+    end
 
     if result[:period] && result[:follow]
       raise OptionParser::InvalidOption,

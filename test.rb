@@ -97,4 +97,22 @@ class ArgsTestCase < Test::Unit::TestCase
     end
   end
 
+  def test_should_merge_arguments_with_conf_file
+    assert_equal(
+        { count: 100, follow: true },
+        Args.parse(['-f', 'test'], <<-EOS))
+test:
+  :count: 100
+EOS
+  end
+
+  def test_should_fail_if_conf_entry_not_found
+    assert_raises(OptionParser::InvalidArgument) do
+      Args.parse(['test1'], <<-EOS)
+test:
+  :follow: true
+EOS
+    end
+  end
+
 end
