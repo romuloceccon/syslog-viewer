@@ -329,6 +329,12 @@ class Application
 end
 
 if __FILE__ == $0
-  app = Application.new(Args.parse(ARGV))
+  conf = "#{ENV['HOME']}/.syslog-viewer"
+  if File.exist?(conf)
+    args = Args.parse(ARGV, File.read(conf))
+  else
+    args = Args.parse(ARGV)
+  end
+  app = Application.new(args)
   app.run
 end
