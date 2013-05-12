@@ -79,28 +79,7 @@ class Args
           'or -n. Examples:',
           '  2013-05-05 20:50:00,2013-05-05 21:00:00',
           '  2013-05-06 01:00:00 +0000,-10') do |v|
-        p = v.split(',')
-        p1 = p2 = nil
-        if p.count > 2
-          raise OptionParser::InvalidArgument, v
-        end
-        p1 = parse_date_or_count(p[0]) if p[0]
-        p2 = parse_date_or_count(p[1]) if p[1]
-        if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 <= p2
-          result['period'] = { conditions:
-              "DeviceReportedTime >= '#{fmt_date(p1)}' AND DeviceReportedTime <= '#{fmt_date(p2)}'",
-              order: 'DeviceReportedTime', reversed: false }
-        elsif p1.respond_to?(:strftime) && Numeric === p2
-          if p2 >= 0
-            result['period'] = { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
-                limit: p2, order: 'DeviceReportedTime', reversed: false }
-          else
-            result['period'] = { conditions: "DeviceReportedTime <= '#{fmt_date(p1)}'",
-                limit: -p2, order: 'DeviceReportedTime DESC', reversed: true }
-          end
-        else
-          raise OptionParser::InvalidArgument, v
-        end
+        result['period'] = parse_period(v)
       end
 
       opts.on('-h', '--help', 'Displays this help') do
@@ -115,6 +94,9 @@ class Args
       unless conf_data = @conf[conf_entry]
         raise OptionParser::InvalidArgument, conf_entry
       end 
+      if v = conf_data['period']
+        conf_data['period'] = parse_period(v)
+      end
       result = @conf[conf_entry].merge(result)
     end
 
@@ -128,6 +110,32 @@ class Args
     end
 
     result
+  end
+
+  private
+  def parse_period(v)
+    p = v.split(',')
+    p1 = p2 = nil
+    if p.count != 2
+      raise OptionParser::InvalidArgument, v
+    end
+    p1 = parse_date_or_count(p[0])
+    p2 = parse_date_or_count(p[1])
+    if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 <= p2
+      return { conditions:
+          "DeviceReportedTime >= '#{fmt_date(p1)}' AND DeviceReportedTime <= '#{fmt_date(p2)}'",
+          order: 'DeviceReportedTime', reversed: false }
+    elsif p1.respond_to?(:strftime) && Numeric === p2
+      if p2 >= 0
+        return { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
+            limit: p2, order: 'DeviceReportedTime', reversed: false }
+      else
+        return { conditions: "DeviceReportedTime <= '#{fmt_date(p1)}'",
+            limit: -p2, order: 'DeviceReportedTime DESC', reversed: true }
+      end
+    else
+      raise OptionParser::InvalidArgument, v
+    end
   end
 
 end

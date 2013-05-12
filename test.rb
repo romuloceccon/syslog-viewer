@@ -115,4 +115,15 @@ EOS
     end
   end
 
+  def test_should_parse_period_inside_conf_file
+     assert_equal(
+        { 'period' => {
+            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
+            limit: 10, order: "DeviceReportedTime", reversed: false } },
+        Args.parse(['test'], <<-EOS))
+test:
+  period: '2013-05-05 22:20:00 +0000,10'
+EOS
+  end
+
 end
