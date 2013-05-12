@@ -93,7 +93,10 @@ class Args
     if conf_entry = @args.first
       unless conf_data = @conf[conf_entry]
         raise OptionParser::InvalidArgument, conf_entry
-      end 
+      end
+      if v = conf_data['database']
+        symbolize_keys(v)
+      end
       if v = conf_data['period']
         conf_data['period'] = parse_period(v)
       end
@@ -136,6 +139,13 @@ class Args
     else
       raise OptionParser::InvalidArgument, v
     end
+  end
+
+  def symbolize_keys(h)
+    temp = {}
+    h.each { |k, v| temp[k.to_sym] = v }
+    h.replace(temp)
+    h
   end
 
 end

@@ -116,13 +116,27 @@ EOS
   end
 
   def test_should_parse_period_inside_conf_file
-     assert_equal(
+    assert_equal(
         { 'period' => {
             conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
             limit: 10, order: "DeviceReportedTime", reversed: false } },
         Args.parse(['test'], <<-EOS))
 test:
   period: '2013-05-05 22:20:00 +0000,10'
+EOS
+  end
+
+  def test_should_parse_database_inside_conf_file
+    assert_equal(
+        { 'database' => { :host => 'example.org', :port => 3306,
+            :username => 'joe', :password => '123' } },
+        Args.parse(['test'], <<-EOS))
+test:
+  database:
+    host: example.org
+    port: 3306
+    username: joe
+    password: '123'
 EOS
   end
 
