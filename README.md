@@ -27,39 +27,39 @@ Ruby 1.9 installed, copy `syslog-viewer.rb` anywhere you like and run:
 
 ## Examples
 
-Connect to host `example.org`, using username `joe` and password `123`, and list
-last 10 events:
+Connect to database `Syslog` at `example.org`, using username `joe` and password
+`123`, and list last 10 events:
 
-        $ ruby syslog-viewer.rb -c joe:123@example.org
+        $ ruby syslog-viewer.rb -c joe:123@example.org/Syslog
 
 Filter last 100 events with severity _warning_ or greater, and then follow new
 events:
 
-        $ ruby syslog-viewer.rb -c joe:123@example.org -s WAR -n 100 -f
+        $ ruby syslog-viewer.rb -c joe:123@example.org/Syslog -s WAR -n 100 -f
 
 Filter events happened between 2013-01-01 0:00:00 and 2013-01-01 2:30:00:
 
-        $ ruby syslog-viewer.rb -c joe:123@example.org -p "2013-01-01 0:00:00,2013-01-01 2:30:00"
+        $ ruby syslog-viewer.rb -c joe:123@example.org/Syslog -p "2013-01-01 0:00:00,2013-01-01 2:30:00"
 
 Filter the last 20 events happened before 2013-02-04 0:00:00:
 
-        $ ruby syslog-viewer.rb -c joe:123@example.org -p "20,2013-02-04 0:00:00"
+        $ ruby syslog-viewer.rb -c joe:123@example.org/Syslog -p "20,2013-02-04 0:00:00"
 
-It's possible to store common options in `~/.syslog-viewer`: it's a YAML file. The
-syntax is exactly the same as in the command line, except for the `connect` option,
-whose name changes to `database`:
+It's possible to store common options in `~/.syslog-viewer`: it's a YAML file.
+The syntax is exactly the same as in the command line:
 
         example:
-          database:
+          connection:
             host: example.org
             port: 3306
             username: joe
             password: '123'
+            database: Syslog
           count: 100
           severity: WARNING
 
-You can then invoke those options by the corresponding label (each label can have
-its own group of options):
+You can then invoke those options by the corresponding label (each label can
+have its own group of options):
 
         $ ruby syslog-viewer.rb -f example
 

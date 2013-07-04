@@ -35,7 +35,7 @@ class Args
       opts.banner = "Usage: #{$0} [options]"
       opts.summary_width = 22
 
-      opts.on('-c', '--connect CONN', 'Connect to MySQL with',
+      opts.on('-c', '--connection CONN', 'Connect to MySQL with',
           'username:password@hostname[:port]/database') do |v|
         unless m = v.match(/^(.*):(.*)@([\w.]*)(:(\d+))?\/(\w+)?$/)
           raise OptionParser::InvalidArgument, v
