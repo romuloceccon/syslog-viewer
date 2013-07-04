@@ -50,33 +50,33 @@ class ArgsTestCase < Test::Unit::TestCase
   def test_should_parse_date_interval
     assert_equal(
         { 'period' => {
-            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00' AND " \
-                        "DeviceReportedTime <= '2013-05-05 22:30:00'",
-            order: "DeviceReportedTime", reversed: false } },
+            conditions: "<t> >= '2013-05-05 22:20:00' AND " \
+                        "<t> <= '2013-05-05 22:30:00'",
+            order: "<t>", reversed: false } },
         Args.parse(['-p', '2013-05-05 22:20:00 +0000,2013-05-05 22:30:00 +0000']))
   end
 
   def test_should_parse_date_with_positive_count
     assert_equal(
         { 'period' => {
-            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
-            limit: 10, order: "DeviceReportedTime", reversed: false } },
+            conditions: "<t> >= '2013-05-05 22:20:00'",
+            limit: 10, order: "<t>", reversed: false } },
         Args.parse(['-p', '2013-05-05 22:20:00 +0000,10']))
   end
 
   def test_should_parse_date_with_negative_count
     assert_equal(
         { 'period' => {
-            conditions: "DeviceReportedTime <= '2013-05-05 22:20:00'",
-            limit: 10, order: "DeviceReportedTime DESC", reversed: true } },
+            conditions: "<t> <= '2013-05-05 22:20:00'",
+            limit: 10, order: "<t> DESC", reversed: true } },
         Args.parse(['-p', '2013-05-05 22:20:00 +0000,-10']))
   end
 
   def test_should_convert_date_to_utc
     assert_equal(
         { 'period' => {
-            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
-            limit: 10, order: "DeviceReportedTime", reversed: false } },
+            conditions: "<t> >= '2013-05-05 22:20:00'",
+            limit: 10, order: "<t>", reversed: false } },
         Args.parse(['-p', '2013-05-05 19:20:00 -0300,10']))
   end
 
@@ -86,8 +86,8 @@ class ArgsTestCase < Test::Unit::TestCase
     fmt = '%Y-%m-%d %H:%M:%S'
     assert_equal(
         { 'period' => {
-            conditions: "DeviceReportedTime >= '%s'" % t_utc.strftime(fmt),
-            limit: 10, order: "DeviceReportedTime", reversed: false } },
+            conditions: "<t> >= '%s'" % t_utc.strftime(fmt),
+            limit: 10, order: "<t>", reversed: false } },
         Args.parse(['-p', '%s,10' % t_loc.strftime(fmt)]))
   end
 
@@ -124,8 +124,8 @@ EOS
   def test_should_parse_period_inside_conf_file
     assert_equal(
         { 'period' => {
-            conditions: "DeviceReportedTime >= '2013-05-05 22:20:00'",
-            limit: 10, order: "DeviceReportedTime", reversed: false } },
+            conditions: "<t> >= '2013-05-05 22:20:00'",
+            limit: 10, order: "<t>", reversed: false } },
         Args.parse(['test'], <<-EOS))
 test:
   period: '2013-05-05 22:20:00 +0000,10'

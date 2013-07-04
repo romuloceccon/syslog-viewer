@@ -126,15 +126,15 @@ class Args
     p2 = parse_date_or_count(p[1])
     if p1.respond_to?(:strftime) && p2.respond_to?(:strftime) && p1 <= p2
       return { conditions:
-          "DeviceReportedTime >= '#{fmt_date(p1)}' AND DeviceReportedTime <= '#{fmt_date(p2)}'",
-          order: 'DeviceReportedTime', reversed: false }
+          "<t> >= '#{fmt_date(p1)}' AND <t> <= '#{fmt_date(p2)}'",
+          order: '<t>', reversed: false }
     elsif p1.respond_to?(:strftime) && Numeric === p2
       if p2 >= 0
-        return { conditions: "DeviceReportedTime >= '#{fmt_date(p1)}'",
-            limit: p2, order: 'DeviceReportedTime', reversed: false }
+        return { conditions: "<t> >= '#{fmt_date(p1)}'",
+            limit: p2, order: '<t>', reversed: false }
       else
-        return { conditions: "DeviceReportedTime <= '#{fmt_date(p1)}'",
-            limit: -p2, order: 'DeviceReportedTime DESC', reversed: true }
+        return { conditions: "<t> <= '#{fmt_date(p1)}'",
+            limit: -p2, order: '<t> DESC', reversed: true }
       end
     else
       raise OptionParser::InvalidArgument, v
