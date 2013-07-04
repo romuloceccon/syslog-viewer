@@ -40,6 +40,12 @@ class ArgsTestCase < Test::Unit::TestCase
        Args.parse(['-s', 'Z'])
     end
   end
+  
+  def test_should_parse_connection
+    assert_equal({ 'connection' => { :host => 'example.org', :port => 3306,
+        :username => 'joe', :password => '123', :database => 'Syslog' } },
+        Args.parse(['-c', 'joe:123@example.org:3306/Syslog']))
+  end
 
   def test_should_parse_date_interval
     assert_equal(
@@ -128,11 +134,11 @@ EOS
 
   def test_should_parse_database_inside_conf_file
     assert_equal(
-        { 'database' => { :host => 'example.org', :port => 3306,
+        { 'connection' => { :host => 'example.org', :port => 3306,
             :username => 'joe', :password => '123' } },
         Args.parse(['test'], <<-EOS))
 test:
-  database:
+  connection:
     host: example.org
     port: 3306
     username: joe

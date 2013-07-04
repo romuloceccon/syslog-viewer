@@ -36,12 +36,12 @@ class Args
       opts.summary_width = 22
 
       opts.on('-c', '--connect CONN', 'Connect to MySQL with',
-          'username:password@hostname[:port]') do |v|
-        unless m = v.match(/^(.*):(.*)@([\w.]*)(:(\d+))?$/)
+          'username:password@hostname[:port]/database') do |v|
+        unless m = v.match(/^(.*):(.*)@([\w.]*)(:(\d+))?\/(\w+)?$/)
           raise OptionParser::InvalidArgument, v
         end
-        result['database'] = { :host => m[3], :username => m[1],
-            :password => m[2], :port => m[5].to_i }
+        result['connection'] = { :host => m[3], :username => m[1],
+            :password => m[2], :port => m[5].to_i, :database => m[6] }
       end
       opts.on('-1', '--first-line', 'Outputs first line of every message') do |v|
         result['first_line'] = true
@@ -94,7 +94,7 @@ class Args
       unless conf_data = @conf[conf_entry]
         raise OptionParser::InvalidArgument, conf_entry
       end
-      if v = conf_data['database']
+      if v = conf_data['connection']
         symbolize_keys(v)
       end
       if v = conf_data['period']
@@ -204,12 +204,12 @@ class Application
   def initialize(options)
     @options = options.dup
     @options['count'] = 10 unless @options['count']
-    @options['database'] = { } unless @options['database']
+    @options['connection'] = { } unless @options['connection']
 
     @cols = `stty size`.strip.split[1].to_i
 
-    @client = Mysql2::Client.new({ database: 'Syslog', database_timezone: :utc,
-        application_timezone: :local }.merge(@options['database']))
+    @client = Mysql2::Client.new({ database_timezone: :utc,
+        application_timezone: :local }.merge(@options['connection']))
 
     @message_width = [@cols - 'dd/mm HH:MM:SS hhhhhh ttttttttttttttt FACILI SEV '.size, 30].max
     @max_id = 0
