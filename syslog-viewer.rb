@@ -213,17 +213,39 @@ class Application
 
     @message_width = [@cols - 'dd/mm HH:MM:SS hhhhhh ttttttttttttttt FACILI SEV '.size, 30].max
     @max_id = 0
+    
+    @table_name = 'SystemEvents'
+    @c_id = 'id'
+    @c_device_reported_time = 'DeviceReportedTime'
+    @c_facility = 'Facility'
+    @c_priority = 'Priority'
+    @c_from_host = 'FromHost'
+    @c_syslog_tag = 'SyslogTag'
+    @c_message = 'Message'
+    
+    if schema = @options['schema']
+      @table_name = schema['table_name'] || @table_name
+      if columns = schema['columns']
+        @c_id = columns['id'] || @c_id
+        @c_device_reported_time = columns['device_reported_time'] || @c_device_reported_time
+        @c_facility = columns['facility'] || @c_facility
+        @c_priority = columns['priority'] || @c_priority
+        @c_from_host = columns['from_host'] || @c_from_host
+        @c_syslog_tag = columns['syslog_tag'] || @c_syslog_tag
+        @c_message = columns['message'] || @c_message
+      end
+    end
 
     @conditions = []
 
     if h = @options['host']
-      @conditions << "fromhost like '#{sanitize_str(h)}%'"
+      @conditions << "#@c_from_host like '#{sanitize_str(h)}%'"
     end
     if t = @options['tag']
-      @conditions << "syslogtag like '#{sanitize_str(t)}%'"
+      @conditions << "#@c_syslog_tag like '#{sanitize_str(t)}%'"
     end
     if sev = @options['severity']
-      @conditions << "priority <= #{sev}"
+      @conditions << "#@c_priority <= #{sev}"
     end
   end
 
@@ -254,7 +276,7 @@ class Application
   def exec_query(options = {})
     where = ""
     limit = ""
-    order = "order by id desc"
+    order = "order by #@c_id desc"
     if w = options[:where]
       if w.respond_to?(:join)
         unless w.empty?
@@ -270,10 +292,13 @@ class Application
     if options[:order]
       order = "order by #{options[:order]}"
     end
-    @client.query(<<-EOS)
-      select id, DeviceReportedTime, facility, priority, fromhost, syslogtag, message
-      from SystemEvents #{where} #{order} #{limit}
+    query = <<-EOS
+      select #@c_id, #@c_device_reported_time, #@c_facility, #@c_priority,
+      #@c_from_host, #@c_syslog_tag, #@c_message
+      from #@table_name #{where} #{order} #{limit}
     EOS
+    query.gsub!('<t>', @c_device_reported_time)
+    @client.query(query)
   end
 
   def output_message(message, width_of_first_line)
@@ -300,14 +325,14 @@ class Application
     each_method = reversed ? :reverse_each : :each
     arr.send(each_method) do |row|
       @max_id = row['id']
-      dt = row['DeviceReportedTime'].strftime('%d/%m %H:%M:%S')
-      facility = FACILITIES[row['facility']] || '      '
-      priority = SEVERITIES[row['priority']] || '   '
-      host = "%-6s" % row['fromhost'].to_s[0..5]
-      if m = row['syslogtag'].match(/^(.*)\[/)
+      dt = row[@c_device_reported_time].strftime('%d/%m %H:%M:%S')
+      facility = FACILITIES[row[@c_facility]] || '      '
+      priority = SEVERITIES[row[@c_priority]] || '   '
+      host = "%-6s" % row[@c_from_host].to_s[0..5]
+      if m = row[@c_syslog_tag].match(/^(.*)\[/)
         tag = "%-15s" % m[1].to_s[0..14]
       else
-        tag = "%-15s" % row['syslogtag'].to_s[0..14]
+        tag = "%-15s" % row[@c_syslog_tag].to_s[0..14]
       end
       remaining_len = @cols
       print dt;  remaining_len -= dt.size
@@ -320,7 +345,7 @@ class Application
       print ' '; remaining_len -= 1
       print priority; remaining_len -= 3
       print ' '; remaining_len -= 1
-      msg = row['message']
+      msg = row[@c_message]
       msg.slice!(0, 1) if msg[0] == ' '
       output_message(msg, remaining_len)
     end
